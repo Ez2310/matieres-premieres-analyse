@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matières Premières</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f6f8fa;
+            min-height: 100vh;
+            margin: 0;
+            color: #222;
+        }
+        .navbar {
+            background: #232526;
+            color: #fff;
+            padding: 0 0 0 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            height: 60px;
+        }
+        .navbar .logo {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            margin-left: 32px;
+        }
+        .navbar .logo-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 12px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 36px 28px 32px 28px;
+        }
+        h1 {
+            text-align: center;
+            color: #232526;
+            margin-bottom: 10px;
+            font-size: 2.3rem;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .search-bar input, .search-bar select {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1.5px solid #e0e0e0;
+            background: #f6f8fa;
+            color: #232526;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .search-bar input:focus, .search-bar select:focus {
+            border-color: #219ebc;
+            outline: none;
+        }
+        .search-bar input::placeholder {
+            color: #aaa;
+        }
+        .search-bar button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            background: #219ebc;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            box-shadow: 0 2px 8px rgba(33,158,188,0.08);
+        }
+        .search-bar button:hover {
+            background: #126782;
+            color: #fff;
+        }
+        .matiere-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 22px;
+        }
+        .matiere-card {
+            background: #f8fafc;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(33,158,188,0.07);
+            padding: 22px 16px 16px 16px;
+            transition: transform 0.18s, box-shadow 0.18s;
+            border: 1.5px solid #e0e0e0;
+            position: relative;
+        }
+        .matiere-card:hover {
+            transform: translateY(-4px) scale(1.025);
+            box-shadow: 0 6px 24px rgba(33,158,188,0.13);
+            border-color: #219ebc;
+        }
+        .matiere-title {
+            font-weight: 600;
+            color: #219ebc;
+            margin-bottom: 8px;
+            font-size: 1.18em;
+        }
+        .matiere-info {
+            font-size: 1em;
+            margin-bottom: 4px;
+            color: #444;
+        }
+        .prix-btn {
+            margin-top: 12px;
+            background: #232526;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 18px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+            margin-right: 8px;
+        }
+        .prix-btn:hover {
+            background: #219ebc;
+            color: #fff;
+        }
+        .prix-btn.alt {
+            background: #fff;
+            color: #219ebc;
+            border: 1.5px solid #219ebc;
+        }
+        .prix-btn.alt:hover {
+            background: #219ebc;
+            color: #fff;
+        }
+        .prix-result {
+            margin-top: 10px;
+            font-size: 0.99em;
+            color: #232526;
+        }
+        @media (max-width: 700px) {
+            .container {
+                padding: 14px 2vw;
+            }
+            .search-bar {
+                flex-direction: column;
+            }
+        }
+        .periode-btn {
+            background: #e0e0e0;
+            color: #232526;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 18px;
+            margin: 0 4px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .periode-btn.active, .periode-btn:hover {
+            background: #219ebc;
+            color: #fff;
+        }
+        .modal-bg {
+            background: rgba(33, 37, 41, 0.75);
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">
+            <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#219ebc"/><path d="M10 22L16 10L22 22H10Z" fill="#fff"/></svg>
+            Matières Premières Pro
+        </div>
+    </div>
+    <div class="container">
+        <h1>Tableau de bord des matières premières</h1>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Rechercher une matière...">
+            <select id="categorieSelect">
+                <option value="">Toutes catégories</option>
+                <option value="énergie">Énergie</option>
+                <option value="métal">Métal</option>
+                <option value="agricole">Agricole</option>
+                <option value="textile">Textile</option>
+                <option value="chimie">Chimie</option>
+                <option value="industriel">Industriel</option>
+                <option value="gaz industriel">Gaz industriel</option>
+            </select>
+            <select id="variationSelect">
+                <option value="">Toutes variations</option>
+                <option value="hausses">Top hausses</option>
+                <option value="baisses">Top baisses</option>
+                <option value="stable">Stable</option>
+            </select>
+            <button onclick="loadMatieres()">Rechercher</button>
+        </div>
+        <div id="matieres" class="matiere-list"></div>
+    </div>
+    <div id="graphModal" class="modal-bg" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1000;align-items:center;justify-content:center;">
+        <div style="background:#fff;padding:24px 18px;border-radius:14px;max-width:600px;width:95vw;position:relative;box-shadow:0 8px 32px rgba(33,158,188,0.13);">
+            <span onclick="closeGraph()" style="position:absolute;top:10px;right:18px;font-size:1.5em;cursor:pointer;color:#219ebc;">&times;</span>
+            <h2 id="graphTitle" style="color:#219ebc;text-align:center;margin-bottom:18px;font-size:1.2em;"></h2>
+            <div style="text-align:center;margin-bottom:12px;">
+                <button class="periode-btn" onclick="loadGraphPeriod('jour')">Jour</button>
+                <button class="periode-btn" onclick="loadGraphPeriod('semaine')">Semaine</button>
+                <button class="periode-btn" onclick="loadGraphPeriod('mois')">Mois</button>
+            </div>
+            <canvas id="graphCanvas" width="550" height="320"></canvas>
+        </div>
+    </div>
+    <div id="indicateursModal" class="modal-bg" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1001;align-items:center;justify-content:center;">
+        <div style="background:#fff;padding:24px 18px;border-radius:14px;max-width:480px;width:95vw;position:relative;box-shadow:0 8px 32px rgba(33,158,188,0.13);">
+            <span onclick="closeIndicateurs()" style="position:absolute;top:10px;right:18px;font-size:1.5em;cursor:pointer;color:#219ebc;">&times;</span>
+            <h2 id="indicateursTitle" style="color:#219ebc;text-align:center;margin-bottom:18px;font-size:1.1em;"></h2>
+            <div id="indicateursContent" style="font-size:1em;color:#232526;"></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        async function loadMatieres() {
+            const q = document.getElementById('searchInput').value;
+            const cat = document.getElementById('categorieSelect').value;
+            const variation = document.getElementById('variationSelect').value;
+            const API_BASE = window.location.origin;
+            let url = `${API_BASE}/api/matieres?q=` + encodeURIComponent(q) + '&categorie=' + encodeURIComponent(cat);
+            const res = await fetch(url);
+            let matieres = await res.json();
+            // Récupère les variations de prix pour chaque matière
+            if(variation) {
+                const prixs = await Promise.all(matieres.map(m => fetch(`${API_BASE}/api/prix/${m.id}`).then(r => r.json())));
+                matieres = matieres.map((m, i) => ({...m, variation_jour: prixs[i].variation_jour ?? null}));
+                if(variation === 'hausses') {
+                    matieres = matieres.filter(m => m.variation_jour !== null).sort((a,b) => b.variation_jour - a.variation_jour).slice(0, 10);
+                } else if(variation === 'baisses') {
+                    matieres = matieres.filter(m => m.variation_jour !== null).sort((a,b) => a.variation_jour - b.variation_jour).slice(0, 10);
+                } else if(variation === 'stable') {
+                    matieres = matieres.filter(m => m.variation_jour !== null && Math.abs(m.variation_jour) < 0.5);
+                }
+            }
+            const container = document.getElementById('matieres');
+            if(matieres.length === 0) {
+                container.innerHTML = '<div style="color:#888;text-align:center;">Aucune matière trouvée.</div>';
+                return;
+            }
+            container.innerHTML = matieres.map(m => `
+                <div class="matiere-card">
+                    <div class="matiere-title">${m.nom}</div>
+                    <div class="matiere-info"><b>Catégorie :</b> ${m.categorie}</div>
+                    <div class="matiere-info"><b>Unité :</b> ${m.unite}</div>
+                    <div class="matiere-info"><b>Symbole :</b> ${m.symbole}</div>
+                    <button class="prix-btn" onclick="getPrix(${m.id}, this)">Voir le prix</button>
+                    <button class="prix-btn alt" onclick="showGraph(${m.id}, '${m.nom.replace(/'/g, "\'")}')">Voir le graphe</button>
+                    <button class="prix-btn" style="background:#fff;color:#232526;border:1.5px solid #219ebc;margin-left:8px;" onclick="showIndicateurs(${m.id}, '${m.nom.replace(/'/g, "\'")}')">Indicateurs</button>
+                    <a href="${m.news_url}" target="_blank" class="prix-btn alt" style="margin-left:8px;text-decoration:none;display:inline-block;">Actualités</a>
+                    <div class="prix-result"></div>
+                </div>
+            `).join('');
+        }
+        async function getPrix(id, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Chargement...';
+            const card = btn.parentElement;
+            const API_BASE = window.location.origin;
+            const res = await fetch(`${API_BASE}/api/prix/` + id);
+            const data = await res.json();
+            let html = '';
+            if(data.prix !== undefined) {
+                html = `<b>Prix :</b> ${data.prix} <br><b>Date :</b> ${data.date}`;
+            } else if(data.prix_actuel !== undefined) {
+                html = `<b>Prix actuel :</b> ${data.prix_actuel}<br>`;
+                if(data.variation_jour !== undefined) html += `<b>Var. jour :</b> ${data.variation_jour}<br>`;
+                if(data.variation_semaine !== undefined) html += `<b>Var. semaine :</b> ${data.variation_semaine}<br>`;
+                if(data.variation_mois !== undefined) html += `<b>Var. mois :</b> ${data.variation_mois}<br>`;
+                if(data.variation_annee !== undefined) html += `<b>Var. année :</b> ${data.variation_annee}<br>`;
+                if(data.derniere_maj !== undefined) html += `<b>Dernière maj :</b> ${data.derniere_maj}`;
+            } else if(data.error) {
+                html = `<span style='color:#e63946;'>${data.error}</span>`;
+            } else {
+                html = `<span style='color:#e63946;'>Erreur inconnue</span>`;
+            }
+            card.querySelector('.prix-result').innerHTML = html;
+            btn.disabled = false;
+            btn.textContent = 'Voir le prix';
+        }
+        let graphChart = null;
+        let currentGraphId = null;
+        let currentGraphNom = '';
+        let currentPeriode = 'mois';
+        function showGraph(id, nom) {
+            document.getElementById('graphModal').style.display = 'flex';
+            document.getElementById('graphTitle').textContent = 'Évolution du prix : ' + nom;
+            currentGraphId = id;
+            currentGraphNom = nom;
+            currentPeriode = 'mois';
+            setActivePeriodeBtn('mois');
+            loadGraph(id, 'mois');
+        }
+        function loadGraph(id, periode) {
+            const API_BASE = window.location.origin;
+            fetch(`${API_BASE}/api/historique/${id}?periode=${periode}`)
+                .then(r => r.json())
+                .then(data => {
+                    const ctx = document.getElementById('graphCanvas').getContext('2d');
+                    if(graphChart) graphChart.destroy();
+                    graphChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels,
+                            datasets: [
+                                {label: 'Prix', data: data.prix, borderColor: '#219ebc', backgroundColor: 'rgba(33,158,188,0.13)', fill: true, tension:0.2, pointRadius:2}
+                            ]
+                        },
+                        options: {
+                            responsive: false,
+                            plugins: {legend: {display: false}},
+                            scales: {x: {title: {display: true, text: data.granularite}}, y: {title: {display: true, text: 'Prix'}}}
+                        }
+                    });
+                });
+        }
+        function loadGraphPeriod(periode) {
+            currentPeriode = periode;
+            setActivePeriodeBtn(periode);
+            loadGraph(currentGraphId, periode);
+        }
+        function setActivePeriodeBtn(periode) {
+            document.querySelectorAll('.periode-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.textContent.toLowerCase().includes(periode)) btn.classList.add('active');
+            });
+        }
+        function closeGraph() {
+            document.getElementById('graphModal').style.display = 'none';
+        }
+        document.getElementById('graphModal').addEventListener('click', function(e) {
+            if(e.target === this) closeGraph();
+        });
+
+        function showIndicateurs(id, nom) {
+            document.getElementById('indicateursModal').style.display = 'flex';
+            document.getElementById('indicateursTitle').textContent = 'Indicateurs techniques : ' + nom;
+            document.getElementById('indicateursContent').innerHTML = '<div style="text-align:center;color:#888;">Chargement...</div>';
+            const API_BASE = window.location.origin;
+            fetch(`${API_BASE}/api/indicateurs/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    if(data.error) {
+                        document.getElementById('indicateursContent').innerHTML = `<span style='color:#e63946;'>${data.error}</span>`;
+                        return;
+                    }
+                    let html = '<table style="width:100%;border-collapse:collapse;">';
+                    html += `<tr><td><b>Moyenne mobile 7j</b></td><td style='text-align:right;'>${data.ma7 ?? '-'}</td></tr>`;
+                    html += `<tr><td><b>Moyenne mobile 30j</b></td><td style='text-align:right;'>${data.ma30 ?? '-'}</td></tr>`;
+                    html += `<tr><td><b>Moyenne mobile 90j</b></td><td style='text-align:right;'>${data.ma90 ?? '-'}</td></tr>`;
+                    html += `<tr><td><b>Médiane 30j</b></td><td style='text-align:right;'>${data.mediane30 ?? '-'}</td></tr>`;
+                    html += `<tr><td><b>Volatilité 7j</b></td><td style='text-align:right;'>${data.vol7 ?? '-'}</td></tr>`;
+                    html += `<tr><td><b>Volatilité 30j</b></td><td style='text-align:right;'>${data.vol30 ?? '-'}</td></tr>`;
+                    html += `<tr><td><b>Volatilité 90j</b></td><td style='text-align:right;'>${data.vol90 ?? '-'}</td></tr>`;
+                    html += `<tr><td><b>Volume</b></td><td style='text-align:right;'>${data.volume ?? '-'}</td></tr>`;
+                    let score = data.score_tendance;
+                    let scoreColor = '#888';
+                    let scoreText = '';
+                    if (score !== null && score !== undefined) {
+                        if (score >= 60) {
+                            scoreColor = '#2ecc40';
+                            scoreText = "Tendance positive, encourageant.";
+                        } else if (score <= 40) {
+                            scoreColor = '#e63946';
+                            scoreText = "Tendance négative, prudence.";
+                        } else {
+                            scoreColor = '#888';
+                            scoreText = "Tendance neutre ou incertaine.";
+                        }
+                    }
+                    html += `<tr><td><b>Score de tendance (0-100)</b></td><td style='text-align:right;color:${scoreColor};font-weight:600;'>${score ?? '-'}</td></tr>`;
+                    if(scoreText) html += `<tr><td colspan='2' style='color:${scoreColor};font-size:0.98em;text-align:center;'>${scoreText}</td></tr>`;
+                    html += '</table>';
+                    document.getElementById('indicateursContent').innerHTML = html;
+                });
+        }
+        function closeIndicateurs() {
+            document.getElementById('indicateursModal').style.display = 'none';
+        }
+        document.getElementById('indicateursModal').addEventListener('click', function(e) {
+            if(e.target === this) closeIndicateurs();
+        });
+        // Chargement initial
+        window.onload = loadMatieres;
+    </script>
+</body>
+</html>
