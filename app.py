@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-# Charge les variables d'environnement AVANT tout
+# Chargement des variables d'environnement AVANT tout
 load_dotenv()
 
 from flask import Flask, jsonify, render_template, request
@@ -13,7 +13,7 @@ import pytz
 app = Flask(__name__)
 CORS(app)
 
-# Liste complète des matières premières avec leurs unités et symboles
+# Liste complète des matières premières
 MATIERES_PREMIERES = [
     {"id": 1, "nom": "Pétrole brut (Brent)", "unite": "Baril (bbl)", "symbole": "BZ=F", "categorie": "énergie"},
     {"id": 2, "nom": "Gaz naturel", "unite": "MMBtu", "symbole": "NG=F", "categorie": "énergie"},
@@ -35,7 +35,6 @@ MATIERES_PREMIERES = [
     {"id": 18, "nom": "Cachemire", "unite": "Kg", "symbole": "CASHMERE", "categorie": "textile"},
     {"id": 19, "nom": "Charbon", "unite": "Tonne", "symbole": "COAL", "categorie": "énergie"},
     {"id": 20, "nom": "Uranium", "unite": "Livre", "symbole": "URANIUM", "categorie": "énergie"},
-    # Ajouts majeurs mondiaux :
     {"id": 21, "nom": "Essence (RBOB)", "unite": "Gallons", "symbole": "RB=F", "categorie": "énergie"},
     {"id": 22, "nom": "Fioul domestique", "unite": "Gallons", "symbole": "HO=F", "categorie": "énergie"},
     {"id": 23, "nom": "Plomb", "unite": "Tonne", "symbole": "LEAD", "categorie": "métal"},
@@ -88,34 +87,35 @@ MATIERES_PREMIERES = [
     {"id": 70, "nom": "Hydrogène", "unite": "kg", "symbole": "HYDROGEN", "categorie": "gaz industriel"}
 ]
 
-# Ajout d'un mapping pour les liens d'actualités par symbole ou catégorie
+# Mapping des liens d'actualités
 NEWS_BASES = {
     'yahoo': 'https://finance.yahoo.com/quote/',
     'investing': 'https://www.investing.com/commodities/',
     'google': 'https://news.google.com/search?q='
 }
 
-# Fonction utilitaire pour générer un lien d'actualité pertinent
 def get_news_url(matiere):
     symb = matiere.get('symbole', '').replace('=F','').replace(' ','-').lower()
     cat = matiere.get('categorie','').lower()
     nom = matiere.get('nom','').replace(' ','+').replace("'",'')
-    # Yahoo pour les symboles connus
+    
     if matiere['symbole'] and matiere['symbole'].endswith('=F'):
         return f"{NEWS_BASES['yahoo']}{matiere['symbole']}?p={matiere['symbole']}"
-    # Investing pour les commodities majeures
+    
     if cat in ['énergie','métal','agricole','chimie','industriel']:
         return f"{NEWS_BASES['investing']}{symb}-news"
-    # Google News fallback
+    
     return f"{NEWS_BASES['google']}{nom}+actualites"
 
-# Ajout du champ news_url à chaque matière
+# Ajout des URLs d'actualités
 for m in MATIERES_PREMIERES:
     m['news_url'] = get_news_url(m)
 
+# ==================== ROUTES API ====================
+
 @app.route('/api/matieres', methods=['GET'])
 def get_matieres():
-    """Retourne la liste des matières premières avec possibilité de filtrage"""
+    """Retourne la liste des matières premières avec filtrage"""
     query = request.args.get('q', '').lower()
     categorie = request.args.get('categorie', '').lower()
     
@@ -131,7 +131,7 @@ def get_matieres():
 
 @app.route('/api/prix/<int:matiere_id>', methods=['GET'])
 def get_prix(matiere_id):
-    """Retourne les données de prix pour une matière première spécifique"""
+    """Retourne les données de prix + prédictions"""
     matiere = next((m for m in MATIERES_PREMIERES if m['id'] == matiere_id), None)
     
     if not matiere:
@@ -148,6 +148,21 @@ def get_prix(matiere_id):
                 "categorie": matiere['categorie']
             }
         })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/predictions/<int:matiere_id>', methods=['GET'])
+def get_predictions(matiere_id):
+    """Retourne les prédictions détaillées"""
+    matiere = next((m for m in MATIERES_PREMIERES if m['id'] == matiere_id), None)
+    
+    if not matiere:
+        return jsonify({"error": "Matière première non trouvée"}), 404
+    
+    try:
+        horizon = request.args.get('horizon', '7j')
+        predictions = dp.get_predictions_detail(matiere['symbole'], horizon)
+        return jsonify(predictions)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -172,12 +187,14 @@ def get_tendances():
 
 @app.route('/api/historique/<int:matiere_id>', methods=['GET'])
 def historique_prix(matiere_id):
-    """Retourne l'historique des prix pour une matière (jour, semaine, mois)"""
+    """Retourne l'historique des prix"""
     matiere = next((m for m in MATIERES_PREMIERES if m['id'] == matiere_id), None)
     if not matiere:
         return jsonify({"error": "Matière première non trouvée"}), 404
-    periode = request.args.get('periode', 'mois')  # 'jour', 'semaine', 'mois'
+    
+    periode = request.args.get('periode', 'mois')
     symbole = matiere['symbole']
+    
     try:
         if periode == 'jour':
             data = dp.get_historique(symbole, '1d')
@@ -188,6 +205,7 @@ def historique_prix(matiere_id):
         else:
             data = dp.get_historique(symbole, '1mo')
             granularite = 'Jour'
+        
         return jsonify({
             'labels': data['labels'],
             'prix': data['prix'],
@@ -198,20 +216,37 @@ def historique_prix(matiere_id):
 
 @app.route('/api/indicateurs/<int:matiere_id>', methods=['GET'])
 def indicateurs_matiere(matiere_id):
+    """Retourne les indicateurs techniques"""
     matiere = next((m for m in MATIERES_PREMIERES if m['id'] == matiere_id), None)
     if not matiere:
         return jsonify({"error": "Matière première non trouvée"}), 404
+    
     periode = request.args.get('periode', '1mo')
+    
     try:
         indicateurs = dp.get_indicateurs(matiere['symbole'], periode)
         return jsonify(indicateurs)
     except Exception as e:
         return jsonify({'error': str(e)})
 
-@app.route('/')
-def dashboard():
-    """Page d'accueil avec dashboard"""
-    return render_template('dashboard.html')
-
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/api/analyse/<int:matiere_id>', methods=['GET'])
+def analyse_matiere(matiere_id):
+    """Retourne une analyse complète (prix + prédictions + indicateurs)"""
+    matiere = next((m for m in MATIERES_PREMIERES if m['id'] == matiere_id), None)
+    if not matiere:
+        return jsonify({"error": "Matière première non trouvée"}), 404
+    
+    try:
+        # Prix et prédictions
+        prix_data = dp.get_prix_matiere(matiere['symbole'])
+        
+        # Indicateurs
+        indicateurs = dp.get_indicateurs(matiere['symbole'])
+        
+        # Prédictions détaillées
+        predictions = dp.get_predictions_detail(matiere['symbole'])
+        
+        return jsonify({
+            "matiere": {
+                "id": matiere['id'],
+               
