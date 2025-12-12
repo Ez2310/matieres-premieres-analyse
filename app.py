@@ -273,7 +273,7 @@ def health_check():
 @app.route('/', methods=['GET'])
 def index():
     """Page d'accueil avec l'interface web"""
-    return render_template('index.html')
+    return render_template('dashboard.html')
 
 @app.errorhandler(404)
 def not_found(error):
