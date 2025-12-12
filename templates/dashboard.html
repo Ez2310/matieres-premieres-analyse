@@ -177,6 +177,22 @@
         .modal-bg {
             background: rgba(33, 37, 41, 0.75);
         }
+        .predictions-modal {
+            background: #fff;
+            padding: 24px 18px;
+            border-radius: 14px;
+            max-width: 500px;
+            width: 95vw;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(106, 17, 203, 0.13);
+        }
+        .scenario-card {
+            margin: 10px 0;
+            padding: 12px;
+            border-left: 4px solid #6a11cb;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -210,6 +226,15 @@
         </div>
         <div id="matieres" class="matiere-list"></div>
     </div>
+    
+    <!-- Modale pour les prédictions -->
+    <div id="predictionsModal" class="modal-bg" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1002;align-items:center;justify-content:center;">
+        <div class="predictions-modal">
+            <span onclick="closePredictions()" style="position:absolute;top:10px;right:18px;font-size:1.5em;cursor:pointer;color:#6a11cb;">&times;</span>
+            <div id="predictionsContent"></div>
+        </div>
+    </div>
+
     <div id="graphModal" class="modal-bg" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1000;align-items:center;justify-content:center;">
         <div style="background:#fff;padding:24px 18px;border-radius:14px;max-width:600px;width:95vw;position:relative;box-shadow:0 8px 32px rgba(33,158,188,0.13);">
             <span onclick="closeGraph()" style="position:absolute;top:10px;right:18px;font-size:1.5em;cursor:pointer;color:#219ebc;">&times;</span>
@@ -264,12 +289,80 @@
                     <div class="matiere-info"><b>Symbole :</b> ${m.symbole}</div>
                     <button class="prix-btn" onclick="getPrix(${m.id}, this)">Voir le prix</button>
                     <button class="prix-btn alt" onclick="showGraph(${m.id}, '${m.nom.replace(/'/g, "\'")}')">Voir le graphe</button>
+                    <button class="prix-btn" style="background:#6a11cb;color:white;" 
+                            onclick="showPredictions(${m.id}, '${m.nom.replace(/'/g, "\'")}')">
+                        🔮 Prédictions
+                    </button>
                     <button class="prix-btn" style="background:#fff;color:#232526;border:1.5px solid #219ebc;margin-left:8px;" onclick="showIndicateurs(${m.id}, '${m.nom.replace(/'/g, "\'")}')">Indicateurs</button>
                     <a href="${m.news_url}" target="_blank" class="prix-btn alt" style="margin-left:8px;text-decoration:none;display:inline-block;">Actualités</a>
                     <div class="prix-result"></div>
                 </div>
             `).join('');
         }
+
+        // Fonction pour afficher les prédictions
+        function showPredictions(id, nom) {
+            const API_BASE = window.location.origin;
+            document.getElementById('predictionsModal').style.display = 'flex';
+            document.getElementById('predictionsContent').innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Chargement des prédictions...</div>';
+            
+            fetch(`${API_BASE}/api/predictions/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    let html = `<h3 style="color:#6a11cb;margin-bottom:20px;text-align:center;">🔮 Prédictions pour ${nom}</h3>`;
+                    
+                    if(data.error) {
+                        html = `<p style="color:#e63946;text-align:center;">${data.error}</p>`;
+                        document.getElementById('predictionsContent').innerHTML = html;
+                        return;
+                    }
+                    
+                    html += `<div style="background:#f0f2f5;padding:15px;border-radius:8px;margin-bottom:20px;">
+                        <p><b>💰 Prix actuel:</b> $${data.prix_actuel || 'N/A'}</p>
+                        <p><b>📈 Tendance:</b> ${data.tendance?.direction || 'N/A'} (${data.tendance?.force_tendance || 'N/A'}%/jour)</p>
+                    </div>`;
+                    
+                    if(data.scénarios && data.scénarios.length > 0) {
+                        html += `<h4 style="color:#333;margin-bottom:15px;">📊 Scénarios (7 jours):</h4>`;
+                        
+                        data.scénarios.forEach(scen => {
+                            html += `<div class="scenario-card">
+                                <b style="color:#6a11cb;">${scen.nom} (${scen.probabilité}%)</b><br>
+                                <span style="font-size:0.9em;color:#555;">💰 Prix probable: $${scen.prix_final}</span><br>
+                                <span style="font-size:0.9em;color:#555;">📏 Fourchette: $${scen.fourchette[0]} - $${scen.fourchette[1]}</span><br>
+                                <small style="color:#666;font-style:italic;">${scen.description}</small>
+                            </div>`;
+                        });
+                    }
+                    
+                    if(data.recommandation) {
+                        html += `<div style="background:#e8f4f8;padding:15px;border-radius:8px;margin-top:20px;border-left:4px solid #219ebc;">
+                            <p><b>🎯 Recommandation:</b> ${data.recommandation.action} <span style="float:right;color:#219ebc;">(${data.recommandation.confiance})</span></p>
+                        </div>`;
+                    }
+                    
+                    html += `<p style="font-size:0.8em;color:#888;text-align:center;margin-top:20px;">
+                        ⚠️ Ces prédictions sont à titre informatif seulement.<br>
+                        Les performances passées ne préjugent pas des résultats futurs.
+                    </p>`;
+                    
+                    document.getElementById('predictionsContent').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('predictionsContent').innerHTML = 
+                        `<p style="color:#e63946;text-align:center;">Erreur lors du chargement des prédictions: ${error.message}</p>`;
+                });
+        }
+
+        function closePredictions() {
+            document.getElementById('predictionsModal').style.display = 'none';
+        }
+
+        // Fermer la modale en cliquant à l'extérieur
+        document.getElementById('predictionsModal').addEventListener('click', function(e) {
+            if(e.target === this) closePredictions();
+        });
+
         async function getPrix(id, btn) {
             btn.disabled = true;
             btn.textContent = 'Chargement...';
@@ -403,3 +496,7 @@
     </script>
 </body>
 </html>
+            
+       
+      
+       
