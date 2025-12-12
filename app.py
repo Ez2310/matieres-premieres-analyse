@@ -249,4 +249,42 @@ def analyse_matiere(matiere_id):
         return jsonify({
             "matiere": {
                 "id": matiere['id'],
-               
+                "nom": matiere['nom'],
+                "unite": matiere['unite'],
+                "categorie": matiere['categorie']
+            },
+            "prix": prix_data,
+            "indicateurs": indicateurs,
+            "predictions": predictions
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Endpoint de santé pour vérifier que l'API fonctionne"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now(pytz.timezone('Europe/Paris')).isoformat(),
+        "matieres_count": len(MATIERES_PREMIERES),
+        "version": "1.0.0"
+    })
+
+@app.route('/', methods=['GET'])
+def index():
+    """Page d'accueil avec l'interface web"""
+    return render_template('index.html')
+
+@app.errorhandler(404)
+def not_found(error):
+    """Gestion des erreurs 404"""
+    return jsonify({"error": "Endpoint non trouvé"}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Gestion des erreurs 500"""
+    return jsonify({"error": "Erreur interne du serveur"}), 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
